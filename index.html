@@ -50,6 +50,24 @@
     .transition-all{transition:all .15s}.duration-150{transition-duration:.15s}
     .hidden{display:none}
     #overlay-modal{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+  
+    /* Settings: scrollable so nothing hides behind the mountains; mountains sit after the last item */
+    #settings-screen {
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+    #settings-screen::-webkit-scrollbar { display: none; }
+    #settings-screen > * { flex-shrink: 0; }
+    #settings-screen .mountain-bottom-container {
+      position: relative;
+      left: auto; right: auto; bottom: auto;
+      width: calc(100% + 44px);
+      margin: auto -22px 0;
+    }
+    #settings-screen #btn-instagram { margin-bottom: 28px; }
   </style>
   <style>
     * {
