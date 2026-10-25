@@ -919,6 +919,13 @@
         </span>
         <button class="theme-toggle" id="fx-sound-toggle" role="switch" aria-checked="true" aria-label="Toggle sound effects"><span></span></button>
       </div>
+      <div class="theme-row" style="border-top:1px solid rgba(55,109,244,.15)">
+        <span style="display:flex;align-items:center;gap:12px">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M3 8v8M21 8v8M1 10.5v3M23 10.5v3"/></svg>
+          <span>Haptic Feedback</span>
+        </span>
+        <button class="theme-toggle" id="fx-haptic-toggle" role="switch" aria-checked="true" aria-label="Toggle haptic feedback"><span></span></button>
+      </div>
     </div>
 
     <div class="settings-label" style="margin-top: 24px;">WANT TO FOLLOW ME?</div>
@@ -1259,6 +1266,24 @@
       const fn = Sound[name];
       Sound[name] = function(...args) { if (!Sound.enabled) return; return fn.apply(Sound, args); };
     });
+
+    // Haptic feedback (Settings > Haptic Feedback). Fires on the same events as the sounds, even with sound off.
+    const Haptics = {
+      enabled: true,
+      buzz(pattern) { if (!this.enabled) return; try { if (navigator.vibrate) navigator.vibrate(pattern); } catch(e) {} }
+    };
+    try { if (localStorage.getItem('arrows_haptics') === '0') Haptics.enabled = false; } catch(e) {}
+    const HAPTIC_MAP = {
+      pop: 25, playClick: 18, bonk: [90, 40, 90], xp: [25, 50, 25], win: [50, 60, 50, 60, 160], taskDone: [35, 60, 35],
+      lose: [140, 70, 280], start: 30, open: 20, back: 20, toggle: 22, hint: 28, heal: [25, 50, 25], zoomFit: 18, tick: 14
+    };
+    Object.keys(HAPTIC_MAP).forEach((name) => {
+      const fn = Sound[name];
+      Sound[name] = function(...args) { Haptics.buzz(HAPTIC_MAP[name]); return fn.apply(Sound, args); };
+    });
+
+    // Every touch anywhere on the screen gives a small tap. Game events above then override it with their own stronger pattern.
+    document.addEventListener('pointerdown', () => Haptics.buzz(15), { capture: true, passive: true });
 
     /**************************************************************
      * 2. PSEUDO-RANDOM NUMBER GENERATOR (PERSISTENT LEVEL SEEDS)
@@ -2202,7 +2227,6 @@
         taskRun = 0;
         state.hearts = Math.max(0, state.hearts - 1);
         Sound.bonk();
-        try { if (navigator.vibrate) navigator.vibrate(35); } catch(e) {}
         renderHearts(true);
 
         if (state.hearts <= 0) {
@@ -3121,6 +3145,18 @@
       applySound(true);
     });
     applySound(false);
+
+    const fxHapticToggle = document.getElementById('fx-haptic-toggle');
+    function applyHaptic(persist) {
+      fxHapticToggle.setAttribute('aria-checked', String(Haptics.enabled));
+      if (persist) { try { localStorage.setItem('arrows_haptics', Haptics.enabled ? '1' : '0'); } catch(e) {} }
+    }
+    fxHapticToggle.addEventListener('click', () => {
+      if (Haptics.enabled) { Haptics.enabled = false; Sound.toggle(false); }
+      else { Haptics.enabled = true; Sound.toggle(true); }
+      applyHaptic(true);
+    });
+    applyHaptic(false);
 
     window.addEventListener('resize', fitCamera);
 
